@@ -1,18 +1,19 @@
 // src/hooks/useAI.ts
 import { useEffect } from 'react';
-import { AvatarPosition, LineDimensions, Config, Direction } from './types';
+import { AvatarPosition, LineDimensions, Config, Direction, Role } from './types';
 
 const useAI = (
   isPlayer1Turn: boolean,
   gameState: string,
   playerPosition: AvatarPosition,
   thiefPosition: AvatarPosition,
-  handleMove: (avatar: 'avatar1' | 'avatar2', direction: Direction) => void,
+  handleMove: (role: Role, direction: Direction) => void,
   lines: LineDimensions[],
   config: Config,
   canvasWidth: () => number,
   canvasHeight: () => number,
   isAnimating: boolean,
+  role: Role,
 ) => {
   const { squareSize } = config;
 
@@ -137,20 +138,48 @@ const useAI = (
           }, { direction: validMoves[0], minDistance: -1 });
 
        if(!isAnimating && gameState == 'active') {
-        handleMove('avatar2', bestMove.direction);
+        handleMove(role, bestMove.direction);
        }
         }
       }
     };
 
 
+    const aiChaseAndCatch = () => {
+      if (gameState === 'active' && !isPlayer1Turn) {
+        const validMoves = getValidMoves(playerPosition, lines);
+    
+        if (validMoves.length > 0) {
+          // Choose the move that makes the thief closer to the player
+          const bestMove = validMoves.reduce((prevMove, currentMove) => {
+            const predictedPosition = checkMove(playerPosition, currentMove);
+            const distance = calculateDistance(thiefPosition, predictedPosition);
+    
+            if (distance < prevMove.minDistance || prevMove.minDistance === -1) {
+              return { direction: currentMove, minDistance: distance };
+            } else {
+              return prevMove;
+            }
+          }, { direction: validMoves[0], minDistance: -1 });
+    
+          if(!isAnimating && gameState == 'active') {
+          handleMove(role, bestMove.direction);
+          }
+        }
+      }
+    };
+
     if (isPlayer1Turn === false && gameState === 'active' && !isAnimating && playerPosition !== thiefPosition) {
       console.log('AI is making it\'s move');
       // AI's turn
-      aiMove();
+      if(role === 'player') {
+        aiChaseAndCatch();
+      } else {
+        aiMove();
+      }
     }
 
-  }, [isPlayer1Turn, gameState, handleMove, lines, config, canvasWidth, canvasHeight, squareSize, thiefPosition, playerPosition, isAnimating]);
+  }, [isPlayer1Turn, gameState, handleMove, lines, config, canvasWidth, canvasHeight, squareSize, thiefPosition, playerPosition, isAnimating, role]);
 };
 
 

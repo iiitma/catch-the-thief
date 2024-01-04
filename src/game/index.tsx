@@ -4,7 +4,7 @@ import './game.css';
 import avatar1 from '/assets/avatar1.png';
 import avatar2 from '/assets/avatar2.png';
 import { RiArrowLeftUpLine, RiArrowUpLine, RiArrowRightUpLine, RiArrowLeftLine, RiArrowRightLine, RiArrowLeftDownLine, RiArrowDownLine, RiArrowRightDownLine } from "react-icons/ri";
-import { Config, AvatarPosition, LineDimensions, GameState, Direction } from './types';
+import { Config, AvatarPosition, LineDimensions, GameState, Direction, Role } from './types';
 import useAI from './ai';
 
 export const CANVAS_PADDING = 20;
@@ -30,22 +30,49 @@ const Game: React.FC = () => {
     const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
     const [isAnimating, setIsAnimating] = useState(false);
     const [moves, setMoves] = useState(0);
+    const [selectedGap, setSelectedGap] = useState<number>(2);
+    const [selectedRole, setSelectedRole] = useState<Role>('player');
 
+    const handleGapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const gap = parseInt(event.target.value, 10);
+        updateStartPosition(gap)
+    };
 
+    const updateStartPosition = (gap: number) => {
+        setSelectedGap(gap);
+        switch (gap) {
+            case 1:
+                setPlayerPosition({ x: squareSize+CANVAS_PADDING, y: CANVAS_PADDING});
+                break;
+            case 2:
+                setPlayerPosition({ x: squareSize+CANVAS_PADDING, y: squareSize+CANVAS_PADDING });
+                break;
+            case 3:
+                setPlayerPosition({ x: (squareSize*2)+CANVAS_PADDING, y: squareSize+CANVAS_PADDING });
+                break;
 
-    const startGame = (type: 'even' | 'odd') => {
-        setMoves(0);
-        setIsPlayer1Turn(true);
-        setGameState('inactive');
-        if (type === 'even') {
-            setPlayerPosition({ x: squareSize + CANVAS_PADDING, y: squareSize + CANVAS_PADDING });
-        } else {
-            setPlayerPosition({ x: squareSize + CANVAS_PADDING, y: CANVAS_PADDING });
+            case 4:
+                setPlayerPosition({ x: (squareSize*3)+CANVAS_PADDING, y: squareSize+CANVAS_PADDING  });
+                break;
+            case 5:
+                setPlayerPosition({ x: (squareSize*4)+CANVAS_PADDING, y: squareSize+CANVAS_PADDING  });
+                break;
+            default:
+                break;
         }
+    }
+
+    const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedRole(event.target.value as Role);
+    };
+
+    const startGame = () => {
+        setMoves(0);
+        setIsPlayer1Turn(selectedRole === 'player');
+        setGameState('inactive');
+        updateStartPosition(selectedGap)
         setThiefPosition({ x: CANVAS_PADDING, y: CANVAS_PADDING });
         setGameState('active');
-        setTimeout(() => {
-        }, 1000);
     };
 
 
@@ -178,11 +205,10 @@ const Game: React.FC = () => {
     }, [playerPosition, thiefPosition, stokeWidth, strokeColor, squareSize, map, cornerRadius, cornerColor, avatarSize]);
 
     const handleMove = useCallback(
-        (avatar: 'avatar1' | 'avatar2', direction: Direction) => {
+        (role: Role, direction: Direction) => {
             if (gameState === 'active') {
-                const currentPosition: AvatarPosition = { ...avatar === 'avatar1' ? playerPosition : thiefPosition };
-                const newPosition: AvatarPosition = { ...avatar === 'avatar1' ? playerPosition : thiefPosition };
-
+                const currentPosition: AvatarPosition = { ...role === 'player' ? playerPosition : thiefPosition };
+                const newPosition: AvatarPosition = { ...role === 'player' ? playerPosition : thiefPosition };
 
                 switch (direction) {
                     case 'up':
@@ -236,9 +262,9 @@ const Game: React.FC = () => {
                 }
 
                 if (isValidMove()) {
-                    avatar === 'avatar1' ? setPlayerPosition(newPosition) : setThiefPosition(newPosition);
-                    if(avatar === 'avatar1'){
-                        setMoves(moves => moves+1);
+                    role === 'player' ? setPlayerPosition(newPosition) : setThiefPosition(newPosition);
+                    if (role === 'player') {
+                        setMoves(moves => moves + 1);
                     }
                     setIsAnimating(true);
 
@@ -249,22 +275,22 @@ const Game: React.FC = () => {
                             y: currentPosition.y + (newPosition.y - currentPosition.y) * progress,
                         };
 
-                        avatar === 'avatar1' ? setPlayerPosition(animatedPosition) : setThiefPosition(animatedPosition);
+                        role === 'player' ? setPlayerPosition(animatedPosition) : setThiefPosition(animatedPosition);
 
                         if (progress < 1) {
                             requestAnimationFrame(animate)
                         } else {
-                           if(gameState == 'active') {
-                            setIsPlayer1Turn(isPlayer1Turn => !isPlayer1Turn);
-                            setIsAnimating(false);
-                           }
+                            if (gameState == 'active') {
+                                setIsPlayer1Turn(isPlayer1Turn => !isPlayer1Turn);
+                                setIsAnimating(false);
+                            }
                         }
                     }
 
                     const startTime = Date.now();
                     animate();
 
-                    
+
                 }
 
             }
@@ -286,10 +312,6 @@ const Game: React.FC = () => {
         [map, squareSize],
     )
 
-
-
-
-
     useEffect(() => {
         if (gameState == 'active') {
             // Check if AI and player have the same coordinates
@@ -297,7 +319,7 @@ const Game: React.FC = () => {
                 setGameState('gameover');
                 setIsAnimating(true);
                 setIsPlayer1Turn(true)
-return;
+                return;
             }
         }
     }, [thiefPosition, playerPosition, gameState])
@@ -314,6 +336,7 @@ return;
         canvasWidth,
         canvasHeight,
         isAnimating,
+        selectedRole === 'player' ? 'thief' : 'player',
     );
 
 
@@ -333,20 +356,41 @@ return;
                 {
                     gameState === 'gameover' && <p className="">Ohh great you caught the thief after {moves} {moves == 1 ? 'move' : 'moves'}!!</p>
                 }
+
+                {gameState !== 'active' && <div className="">
+                    <div>
+                        <label htmlFor="gapSelect">Select Gap:</label>
+                        <select className='' id="gapSelect" value={selectedGap} onChange={handleGapChange}>
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                            <option value={4}>4</option>
+                            <option value={5}>5</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="roleSelect">Select Role:</label>
+                        <select className='' id="roleSelect" value={selectedRole} onChange={handleRoleChange}>
+                            <option value="player">Player</option>
+                            <option value="thief">Thief</option>
+                        </select>
+                    </div>
+                </div>}
+
+
                 {gameState !== 'active' && <div className="game-state-controls">
-                    <button onClick={() => startGame('even')}>Start Now(Even)</button>
-                    <button onClick={() => startGame('odd')}>Start Now (Odd)</button>
+                    <button onClick={startGame}>Start</button>
                 </div>}
                 {gameState === 'active' && <div className="game-controls-grid">
-                    <button onClick={() => handleMove('avatar1', 'upleft')}><RiArrowLeftUpLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'up')}><RiArrowUpLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'upright')}><RiArrowRightUpLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'left')}><RiArrowLeftLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'upleft')}><RiArrowLeftUpLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'up')}><RiArrowUpLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'upright')}><RiArrowRightUpLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'left')}><RiArrowLeftLine /></button>
                     <button></button>
-                    <button onClick={() => handleMove('avatar1', 'right')}><RiArrowRightLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'downleft')}><RiArrowLeftDownLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'down')}><RiArrowDownLine /></button>
-                    <button onClick={() => handleMove('avatar1', 'downright')}><RiArrowRightDownLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'right')}><RiArrowRightLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'downleft')}><RiArrowLeftDownLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'down')}><RiArrowDownLine /></button>
+                    <button onClick={() => handleMove(selectedRole, 'downright')}><RiArrowRightDownLine /></button>
                 </div>}
             </div>
 
