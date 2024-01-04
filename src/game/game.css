@@ -6,12 +6,12 @@
 
 .game-title {
     font-size: 2rem;
-    margin-bottom:0px;
+    margin:0px;
 }
 
 .game-subtitle {
     max-width:380px !important;
-    margin: 0 auto 64px;
+    margin: 0 auto auto;
 }
 
 .game-canvas {
@@ -40,3 +40,16 @@
     margin-top: auto;
   }
   
+  select {
+    border-radius: 8px;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    min-width: 320x;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  label {
+    font-size: 0.8em;
+  }

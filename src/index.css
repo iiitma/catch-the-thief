@@ -22,7 +22,6 @@ a:hover {
 }
 
 body {
-  position: fixed;
   margin: 0;
   display: flex;
   flex-direction: column;
