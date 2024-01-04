@@ -1,6 +1,6 @@
 // src/Game.tsx
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import './Game.css';
+import './game.css';
 import avatar1 from '/assets/avatar1.png';
 import avatar2 from '/assets/avatar2.png';
 import { RiArrowLeftUpLine, RiArrowUpLine, RiArrowRightUpLine, RiArrowLeftLine, RiArrowRightLine, RiArrowLeftDownLine, RiArrowDownLine, RiArrowRightDownLine } from "react-icons/ri";
